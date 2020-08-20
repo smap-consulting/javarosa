@@ -21,3 +21,5 @@ logback-test.xml
 
 # macOS
 .DS_Store
+
+local.properties
