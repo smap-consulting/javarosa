@@ -122,6 +122,7 @@ public abstract class LatestDagBase extends IDag {
             for (TreeReference qualified : qualifiedList) {
                EvaluationContext ec = new EvaluationContext(evalContext,
                        qualified);
+               ec.isValidate = mainInstance.isValidate;       // Smap pass on to trigger evaluation
                evaluationResults.addAll(qt.t.apply(mainInstance, ec,
                        qualified));
             }

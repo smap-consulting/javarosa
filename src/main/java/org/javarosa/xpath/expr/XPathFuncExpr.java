@@ -429,6 +429,16 @@ public class XPathFuncExpr extends XPathExpression {
             } else {
                 return currValue;
             }
+        } else if (name.equals("default")) {        // smap protect default values on finalize
+            assertArgsCount(name, args, 1);
+            XPathPathExpr currentFieldPathExpr = XPathPathExpr.fromRef(evalContext.getContextRef());
+            Object currValue = currentFieldPathExpr.eval(model, evalContext).unpack();
+            if (!evalContext.isValidate) {
+                // Set the value
+                return argVals[0];
+            } else {
+                return currValue;   // No change
+            }
         } else if (name.equals("uuid") && (args.length == 0 || args.length == 1)) { //non-standard
             //calculated expressions may be recomputed w/o warning! use with caution!!
             if (args.length == 0) {

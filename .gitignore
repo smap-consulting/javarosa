@@ -9,6 +9,7 @@ build
 .idea
 *.iml
 out
+.project
 
 # mvn
 target

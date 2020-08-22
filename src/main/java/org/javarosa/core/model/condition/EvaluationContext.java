@@ -44,6 +44,7 @@ public class EvaluationContext {
     public boolean isConstraint; //true if we are evaluating a constraint
     public IAnswerData candidateValue; //if isConstraint, this is the value being validated
     public boolean isCheckAddChild; //if isConstraint, true if we are checking the constraint of a parent node on how
+    public boolean isValidate;     //smap
     //  many children it may have
 
     private String outputTextForm = null; //Responsible for informing itext what form is requested if relevant
@@ -74,6 +75,7 @@ public class EvaluationContext {
         instance = base.instance;
 
         isConstraint = base.isConstraint;
+        isValidate = base.isValidate;     // smap
         candidateValue = base.candidateValue;
         isCheckAddChild = base.isCheckAddChild;
 
