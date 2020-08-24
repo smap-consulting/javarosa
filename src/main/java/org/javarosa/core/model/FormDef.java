@@ -1894,4 +1894,41 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
     public HashMap<String, DataInstance> getFormInstances() {
         return formInstances;
     }
+
+    /*
+     * Smap functions
+     */
+    public void populateLaunchModel(HashMap<String, String> model) {
+
+        this.populateLaunchModel(this.mainInstance.getRoot(), model);
+    }
+
+    private void populateLaunchModel(TreeElement node, HashMap<String, String> model) {
+        if (node.isLeaf()) {
+            String name = node.getName();
+            if(name != null) {
+
+                IAnswerData d = node.getValue();
+                if (d != null) {
+                    String k = model.get(name);
+                    if(k != null) {
+                        try {
+                            model.put(k, (String) d.getValue());
+                        } catch (Exception e) {
+
+                        }
+                    }
+                }
+            }
+
+        } else {
+            for(int i = 0; i < node.getNumChildren(); ++i) {
+                TreeElement child = node.getChildAt(i);
+                if (child.getMult() != -2 && !child.isRepeatable()) {
+                    populateLaunchModel(child, model);
+                }
+            }
+        }
+    }
+    // End smap functions
 }
