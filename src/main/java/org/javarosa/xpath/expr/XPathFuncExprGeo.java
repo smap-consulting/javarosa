@@ -56,4 +56,35 @@ class XPathFuncExprGeo {
         logger.warn(msg);
         throw new XPathTypeMismatchException(msg);
     }
+
+    /*
+     * start smap
+     * Smap geo functions
+     *
+     * Get the lat/lon of a single geopoint
+     */
+    GeoUtils.LatLong getSingleGpsCoordinatesFromNodeset(String name, Object argVal) {
+        if (!(argVal instanceof XPathNodeset)) {
+            throw new XPathUnhandledException("function \'" + name + "\' requires a field as the parameter.");
+        }
+        Object[] argList = ((XPathNodeset) argVal).toArgList();
+        int repeatSize = argList.length;
+
+        GeoUtils.LatLong latLong = null;
+
+        if (repeatSize == 1) {
+            // Try to determine if the argument is of type GeoShapeData
+            try {
+                GeoPointData geoPointData = new GeoPointData().cast(new UncastData(XPathFuncExpr.toString(argList[0])));
+                latLong = new GeoUtils.LatLong(geoPointData.getPart(0), geoPointData.getPart(1));
+            } catch (Exception e) {
+                throwMismatch(name);
+            }
+        } else if (repeatSize >= 2) {
+            // treat the input as a series of GeoPointData
+
+            throw new XPathUnhandledException("function \'" + name + "\' requires a single geopoint question as its parameter.");
+        }
+        return latLong;
+    }
 }

@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -467,9 +468,18 @@ public class XPathFuncExpr extends XPathExpression {
             List<GeoUtils.LatLong> latLongs = new XPathFuncExprGeo().getGpsCoordinatesFromNodeset(name, argVals[0]);
             return GeoUtils.calculateAreaOfGPSPolygonOnEarthInSquareMeters(latLongs);
         } else if (name.equals("distance")) {
-            assertArgsCount(name, args, 1);
-            List<GeoUtils.LatLong> latLongs = new XPathFuncExprGeo().getGpsCoordinatesFromNodeset(name, argVals[0]);
-            return GeoUtils.calculateDistance(latLongs);
+            if(args.length == 2) { // smap - Add caclulation of distance between two locations
+                GeoUtils.LatLong latLong1 = new XPathFuncExprGeo().getSingleGpsCoordinatesFromNodeset(name, argVals[0]);
+                GeoUtils.LatLong latLong2 = new XPathFuncExprGeo().getSingleGpsCoordinatesFromNodeset(name, argVals[1]);
+                List<GeoUtils.LatLong> latLongs = new ArrayList<>();
+                latLongs.add(latLong1);
+                latLongs.add(latLong2);
+                return GeoUtils.calculateDistance(latLongs);
+            } else {
+                assertArgsCount(name, args, 1);
+                List<GeoUtils.LatLong> latLongs = new XPathFuncExprGeo().getGpsCoordinatesFromNodeset(name, argVals[0]);
+                return GeoUtils.calculateDistance(latLongs);
+            }
         } else if (name.equals("digest") && (args.length == 2 || args.length == 3)) {
             return DigestAlgorithm.from(toString(argVals[1])).digest(
                 toString(argVals[0]),
