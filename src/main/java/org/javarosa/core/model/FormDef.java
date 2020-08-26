@@ -1910,10 +1910,10 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
 
                 IAnswerData d = node.getValue();
                 if (d != null) {
-                    String k = model.get(name);
-                    if(k != null) {
+                    String v = model.get(name);
+                    if(v == "") {   // Has not been set
                         try {
-                            model.put(k, (String) d.getValue());
+                            model.put(name, (String) d.getValue());
                         } catch (Exception e) {
 
                         }
