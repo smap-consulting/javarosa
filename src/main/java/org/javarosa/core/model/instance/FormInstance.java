@@ -49,6 +49,7 @@ public class FormInstance extends DataInstance<TreeElement> implements Persistab
     public String formVersion;
     public String uiVersion;
     public boolean isValidate = false;     // smap set when doing finalization processing
+    public boolean isInitialize = false;    // smap set when doing initialisation processing
 
     private HashMap<String, Object> namespaces = new HashMap<String, Object>();
 

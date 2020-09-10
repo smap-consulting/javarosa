@@ -430,15 +430,15 @@ public class XPathFuncExpr extends XPathExpression {
             } else {
                 return currValue;
             }
-        } else if (name.equals("default")) {        // smap protect default values on finalize
+        } else if (name.equals("default")) {        // smap protect default values on finalize and initialize
+
             assertArgsCount(name, args, 1);
             XPathPathExpr currentFieldPathExpr = XPathPathExpr.fromRef(evalContext.getContextRef());
             Object currValue = currentFieldPathExpr.eval(model, evalContext).unpack();
-            if (!evalContext.isValidate) {
-                // Set the value
-                return argVals[0];
-            } else {
+            if (evalContext.isValidate || evalContext.isInitialize) {
                 return currValue;   // No change
+            } else {
+                return argVals[0];  // Set the value from the dependency
             }
         } else if (name.equals("uuid") && (args.length == 0 || args.length == 1)) { //non-standard
             //calculated expressions may be recomputed w/o warning! use with caution!!
