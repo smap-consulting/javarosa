@@ -1167,7 +1167,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         if (node.getPreloadHandler() != null) {
             preload = preloader.getQuestionPreload(node.getPreloadHandler(), node.getPreloadParams());
         }
-        if (preload != null) { // what if we want to wipe out a value in the
+        if (preload != null && node.getValue() == null) { // what if we want to wipe out a value in the - smap don' overwrite already set preloads
             // instance?
             node.setAnswer(preload);
         }
@@ -1341,10 +1341,12 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
             DataInstance instance = formInstances.get(instanceId);
             instance.initialize(factory, instanceId);
         }
-        if (newInstance) {// only preload new forms (we may have to revisit
+        // smap Always set preloads so that preloads for a blank template are set - should not overwrite already set values
+        preloadInstance(mainInstance.getRoot());    // smap
+        //if (newInstance) {// only preload new forms (we may have to revisit  - smap
             // this)
-            preloadInstance(mainInstance.getRoot());
-        }
+            // preloadInstance(mainInstance.getRoot());
+        //}
 
         if (getLocalizer() != null && getLocalizer().getLocale() == null) {
             getLocalizer().setToDefault();
