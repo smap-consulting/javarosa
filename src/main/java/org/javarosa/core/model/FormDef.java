@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,7 +41,11 @@ import org.javarosa.core.model.condition.IConditionExpr;
 import org.javarosa.core.model.condition.IFunctionHandler;
 import org.javarosa.core.model.condition.Recalculate;
 import org.javarosa.core.model.condition.Triggerable;
+import org.javarosa.core.model.data.DateData;
+import org.javarosa.core.model.data.DateTimeData;
+import org.javarosa.core.model.data.DecimalData;
 import org.javarosa.core.model.data.IAnswerData;
+import org.javarosa.core.model.data.IntegerData;
 import org.javarosa.core.model.data.MultipleItemsData;
 import org.javarosa.core.model.data.SelectOneData;
 import org.javarosa.core.model.data.StringData;
@@ -53,6 +58,7 @@ import org.javarosa.core.model.instance.InvalidReferenceException;
 import org.javarosa.core.model.instance.TreeElement;
 import org.javarosa.core.model.instance.TreeReference;
 import org.javarosa.core.model.util.restorable.RestoreUtils;
+import org.javarosa.core.model.utils.DateUtils;
 import org.javarosa.core.model.utils.QuestionPreloader;
 import org.javarosa.core.services.locale.Localizable;
 import org.javarosa.core.services.locale.Localizer;
@@ -1917,9 +1923,41 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
                     String v = model.get(name);
                     if(v == "") {   // Has not been set
                         try {
-                            model.put(name, (String) d.getValue());
+                            if (d instanceof MultipleItemsData) {
+                                List<Selection> selections = (List<Selection>) d.getValue();
+                                StringBuilder sb = new StringBuilder("");
+                                for(Selection s : selections) {
+                                    if(sb.length() > 0) {
+                                        sb.append(" ");
+                                    }
+                                    sb.append(s.getValue());
+                                }
+                                model.put(name, sb.toString());
+                            } else if (d instanceof SelectOneData) {
+                                List<Selection> selections = new ArrayList<>(1);
+                                Selection s = (Selection) d.getValue();
+                                model.put(name, s.getValue());
+                            } else if (d instanceof IntegerData) {
+                                Integer iValue = (Integer) d.getValue();
+                                try {
+                                    model.put(name, String.valueOf(iValue));
+                                } catch(Exception e) {
+                                }
+                            } else if (d instanceof DecimalData) {
+                                Double dValue = (Double) d.getValue();
+                                try {
+                                    model.put(name, String.valueOf(dValue));
+                                } catch(Exception e) {
+                                }
+                            } else if (d instanceof DateData) {
+                                model.put(name, DateUtils.formatDate((Date)d.getValue(), DateUtils.FORMAT_ISO8601));
+                            } else if (d instanceof DateTimeData) {
+                                model.put(name, DateUtils.formatDateTime((Date)d.getValue(), DateUtils.FORMAT_ISO8601));
+                            } else {
+                                model.put(name, (String) d.getValue());
+                            }
                         } catch (Exception e) {
-
+                            logger.error("ERROR! Populating launch model", e);
                         }
                     }
                 }
