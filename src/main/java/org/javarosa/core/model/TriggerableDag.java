@@ -90,6 +90,11 @@ public class TriggerableDag {
      */
     private final Map<TreeReference, Set<QuickTriggerable>> triggerablesPerTrigger = new HashMap<>();
 
+    /**
+     * An index to look up relevance conditions for each repeat. See buildRelevancePerRepeat.
+     */
+    private Map<TreeReference, QuickTriggerable> relevancePerRepeat = new HashMap<>();
+
     TriggerableDag(EventNotifierAccessor accessor) {
         this.accessor = accessor;
     }
@@ -149,6 +154,7 @@ public class TriggerableDag {
      */
     void finalizeTriggerables(FormInstance mainInstance, EvaluationContext ec) throws IllegalStateException {
         triggerablesDAG = buildDag(allTriggerables, getDagEdges(mainInstance, ec));
+        relevancePerRepeat = buildRelevancePerRepeat(mainInstance, triggerablesDAG);
     }
 
     /**
@@ -528,19 +534,23 @@ public class TriggerableDag {
         // the repeat are only triggered for the changed instance. This is important for performance.
         TreeReference contextRef = affectsAllRepeatInstances ? toTrigger.getContext() : toTrigger.getContext().contextualize(changedRef);
 
-        List<EvaluationResult> evaluationResults = new ArrayList<>(0);
         // In general, expansion will have no effect. It only makes a difference if affectsAllRepeatInstances is true in
         // which case the triggerable will be applied for every repeat instance.
-        for (TreeReference qualified : evalContext.expandReference(contextRef))
+        List<TreeReference> qualifiedReferences = evalContext.expandReference(contextRef);
+
+        List<EvaluationResult> evaluationResults = new ArrayList<>(0);
+        for (TreeReference qualified : qualifiedReferences) {
             try {
                 // apply evaluates the expression in the given context and saves the result in the contextualized target(s).
                 evaluationResults.addAll(toTrigger.apply(mainInstance, new EvaluationContext(evalContext, qualified), qualified));
             } catch (Exception e) {
                 throw new RuntimeException("Error evaluating field '" + contextRef.getNameLast() + "' (" + qualified + "): " + e.getMessage(), e);
             }
+        }
 
-        if (evaluationResults.size() > 0)
+        if (evaluationResults.size() > 0) {
             accessor.getEventNotifier().publishEvent(new Event(toTrigger.isCondition() ? "Condition" : "Recalculate", evaluationResults));
+        }
     }
 
     private void evaluateChildrenTriggerables(FormInstance mainInstance, EvaluationContext evalContext, TreeElement newNode, boolean createdOrDeleted, Set<QuickTriggerable> alreadyEvaluated) {
@@ -632,6 +642,28 @@ public class TriggerableDag {
         }
 
         return result;
+    }
+
+    /**
+     * Builds an index to look up relevance for repeats. Assumes that there can only be a single Triggerable associated
+     * with a repeat and that it must represent relevance. This Triggerable is evaluated directly to determine relevance
+     * at a new repeat prompt. This is used instead of the relevance stored in the corresponding TreeElement and updated
+     * by the DAG because repeat templates aren't updated by DAG recomputations. Additionally, the context intersection
+     * made in Triggerable.intersectContextWith means we may not evaluate against the correct context when the triggerable is
+     * applied.
+     */
+    private static Map<TreeReference, QuickTriggerable> buildRelevancePerRepeat(FormInstance mainInstance, Set<QuickTriggerable> triggerables) {
+        Map<TreeReference, QuickTriggerable> relevancePerRepeat = new HashMap<>();
+        for (QuickTriggerable triggerable : triggerables)
+            if (triggerable.isCondition())
+                for (TreeReference target : triggerable.getTargets())
+                    if (mainInstance.getTemplate(target) != null)
+                        relevancePerRepeat.put(target, triggerable);
+        return relevancePerRepeat;
+    }
+
+    public QuickTriggerable getRelevanceForRepeat(TreeReference genericRepeatRef) {
+        return relevancePerRepeat.get(genericRepeatRef);
     }
 
     void copyItemsetAnswer(FormInstance mainInstance, EvaluationContext evalContext, TreeReference copyRef, TreeElement copyToElement) {

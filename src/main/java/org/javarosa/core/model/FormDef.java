@@ -531,8 +531,25 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
     }
 
     public boolean isRepeatRelevant(TreeReference repeatRef) {
-        TreeElement repeatNode = mainInstance.resolveReference(repeatRef);
-        return repeatNode == null || repeatNode.isRelevant();
+        boolean relev = true;
+
+        QuickTriggerable qc = dagImpl.getRelevanceForRepeat(repeatRef.genericize());
+        if (qc != null) {
+            relev = (boolean) qc.eval(mainInstance, new EvaluationContext(exprEvalContext, repeatRef));
+        }
+
+        if (relev) {
+            // Must check the template in case of static relevance expressions that wouldn't be in the DAG (e.g. false()).
+            TreeElement templNode = mainInstance.getTemplate(repeatRef);
+            // Check the relevancy of the immediate parent. Unclear whether this is needed because in a normal form-filling
+            // flow the child would not be accessible if its parent is irrelevant.
+            TreeReference parentPath = templNode.getParent().getRef().genericize();
+            TreeElement parentNode = mainInstance
+                .resolveReference(parentPath.contextualize(repeatRef));
+            relev = parentNode.isRelevant() && templNode.isRelevant();
+        }
+
+        return relev;
     }
 
     public boolean canCreateRepeat(TreeReference repeatRef, FormIndex repeatIndex) {

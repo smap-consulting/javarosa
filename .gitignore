@@ -1,6 +1,9 @@
 # java
 *.class
 
+.project
+deploy.sh
+
 # gradle
 .gradle
 build
