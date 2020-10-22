@@ -388,12 +388,22 @@ public class XPathFuncExpr extends XPathExpression {
             return toString(argVals[0]).startsWith(toString(argVals[1]));
         } else if (name.equals("ends-with") && args.length == 2) {
             return toString(argVals[0]).endsWith(toString(argVals[1]));
-        } else if (name.equals("string-length")) {
-            assertArgsCount(name, args, 1);
-            return stringLength(argVals[0]);
-        } else if (name.equals("normalize-space")) {
-            assertArgsCount(name, args, 1);
-            return normalizeSpace(argVals[0]);
+        } else if (name.equals("string-length") && args.length <= 1) {
+            Object arg;
+            if (args.length == 1) {
+                arg = argVals[0];
+            } else {
+                arg = (XPathPathExpr.fromRef(evalContext.getContextRef())).eval(model, evalContext).unpack();
+            }
+            return stringLength(arg);
+        } else if (name.equals("normalize-space") && args.length <= 1) {
+            Object arg;
+            if (args.length == 1) {
+                arg = argVals[0];
+            } else {
+                arg = (XPathPathExpr.fromRef(evalContext.getContextRef())).eval(model, evalContext).unpack();
+            }
+            return normalizeSpace(arg);
         } else if (name.equals("checklist") && args.length >= 2) { //non-standard
             if (args.length == 3 && argVals[2] instanceof XPathNodeset) {
                 return checklist(argVals[0], argVals[1], ((XPathNodeset) argVals[2]).toArgList());
@@ -975,7 +985,7 @@ public class XPathFuncExpr extends XPathExpression {
             // confirm that the passed XPath is a parent of our overall target path
             // Ensure we can deal with relative group refs by contextualizing with the EC's context ref
             TreeReference groupRef = ((XPathPathExpr) args[pathargi]).getReference().contextualize(ec.getContextRef());
-            if (!groupRef.isParentOf(targetRef, true)) {
+            if (!groupRef.isAncestorOf(targetRef, true)) {
                 throw new XPathTypeMismatchException("indexed-repeat(): parameter " + (pathargi + 1) + " must be a parent of the field in parameter 1");
             }
 

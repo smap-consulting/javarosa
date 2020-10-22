@@ -90,7 +90,6 @@ import org.javarosa.core.services.locale.TableLocaleSource;
 import org.javarosa.core.util.CacheTable;
 import org.javarosa.core.util.StopWatch;
 import org.javarosa.core.util.externalizable.PrototypeFactory;
-import org.javarosa.core.util.externalizable.PrototypeFactoryDeprecated;
 import org.javarosa.model.xform.XPathReference;
 import org.javarosa.xform.util.InterningKXmlParser;
 import org.javarosa.xform.util.XFormAnswerDataParser;
@@ -103,6 +102,7 @@ import org.javarosa.xpath.XPathParseTool;
 import org.javarosa.xpath.expr.XPathFuncExpr;
 import org.javarosa.xpath.expr.XPathNumericLiteral;
 import org.javarosa.xpath.expr.XPathPathExpr;
+import org.javarosa.xpath.expr.XPathStringLiteral;
 import org.javarosa.xpath.parser.XPathSyntaxException;
 import org.kxml2.io.KXmlParser;
 import org.kxml2.kdom.Document;
@@ -148,7 +148,6 @@ public class XFormParser implements IXFormParserFunctions {
     private static HashMap<String, IElementHandler> topLevelHandlers;
     private static HashMap<String, IElementHandler> groupLevelHandlers;
     private static final Map<String, Integer> typeMappings = TypeMappings.getMap();
-    private static PrototypeFactoryDeprecated modelPrototypes;
     private static List<SubmissionParser> submissionParsers;
 
     private Reader _reader;
@@ -204,7 +203,6 @@ public class XFormParser implements IXFormParserFunctions {
 
     private static void staticInit() {
         initProcessingRules();
-        modelPrototypes = new PrototypeFactoryDeprecated();
         submissionParsers = new ArrayList<>(1);
 
         referencedInstanceIds = new HashSet<>();
@@ -782,12 +780,12 @@ public class XFormParser implements IXFormParserFunctions {
             }
         }
 
-        String valueRef = e.getAttributeValue(null, "value");
+        String valueExpression = e.getAttributeValue(null, "value");
         Action action;
         TreeReference treeref = FormInstance.unpackReference(dataRef);
 
         registerActionTarget(treeref);
-        if (valueRef == null) {
+        if (valueExpression == null) {
             if (e.getChildCount() == 0 || !e.isText(0)) {
                 throw new XFormParseException("No 'value' attribute and no inner value set in <setvalue> associated with: " + treeref, e);
             }
@@ -795,10 +793,11 @@ public class XFormParser implements IXFormParserFunctions {
             action = new SetValueAction(treeref, e.getText(0));
         } else {
             try {
-                action = new SetValueAction(treeref, XPathParseTool.parseXPath(valueRef));
+                action = new SetValueAction(treeref, valueExpression.equals("") ? new XPathStringLiteral("")
+                    : XPathParseTool.parseXPath(valueExpression));
             } catch (XPathSyntaxException e1) {
                 logger.error("Error", e1);
-                throw new XFormParseException("Invalid XPath in value set action declaration: '" + valueRef + "'", e);
+                throw new XFormParseException("Invalid XPath in value set action declaration: '" + valueExpression + "'", e);
             }
         }
 
@@ -863,7 +862,7 @@ public class XFormParser implements IXFormParserFunctions {
         String instanceSrc = instance.getAttributeValue("", "src");
 
         // Only consider child nodes if the instance declaration does not include a source.
-        // TODO: revisit this to allow for a mix of static and dynamic data but beware of https://github.com/opendatakit/javarosa/issues/451
+        // TODO: revisit this to allow for a mix of static and dynamic data but beware of https://github.com/getodk/javarosa/issues/451
         if (instanceSrc == null) {
             for (int i = 0; i < instance.getChildCount(); i++) {
                 if (instance.getType(i) == Node.ELEMENT) {
@@ -1931,7 +1930,6 @@ public class XFormParser implements IXFormParserFunctions {
     private void addMainInstanceToFormDef(Element e, FormInstance instanceModel) {
         loadInstanceData(e, instanceModel.getRoot(), _f);
 
-        checkDependencyCycles();
         _f.setInstance(instanceModel);
         _f.setLocalizer(localizer);
 
@@ -2019,14 +2017,8 @@ public class XFormParser implements IXFormParserFunctions {
             if (typeMappings.get(modelType) == null) {
                 throw new XFormParseException("ModelType " + modelType + " is not recognized.", node);
             }
-            element = (TreeElement) modelPrototypes.getNewInstance(typeMappings.get(modelType).toString());
-            if (element == null) {
-                element = new TreeElement(name, multiplicity);
-                logger.info("No model type prototype available for {}", modelType);
-            } else {
-                element.setName(name);
-                element.setMult(multiplicity);
-            }
+            element = new TreeElement(name, multiplicity);
+            logger.info("No model type prototype available for {}", modelType);
         }
         if (node.getNamespace() != null) {
             if (!node.getNamespace().equals(docnamespace)) {

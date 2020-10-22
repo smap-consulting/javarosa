@@ -16,12 +16,11 @@
 
 package org.javarosa.core.model;
 
-import org.javarosa.core.model.instance.TreeReference;
-import org.javarosa.core.util.Objects;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import org.javarosa.core.model.instance.TreeReference;
 
 /**
  * {@code FormIndex} is an immutable index which is structured to provide quick access to a specific node in a
@@ -243,7 +242,7 @@ public class FormIndex implements Serializable {
 
     /**
      * @return An index into the next level of specificity past the current context. An
-     * example would be an index  into an element that is a child of the element referenced
+     * example would be an index into an element that is a child of the element referenced
      * by the local index.
      */
     public FormIndex getNextLevel() {
@@ -545,6 +544,19 @@ public class FormIndex implements Serializable {
 
             cur = cur.getNextLevel();
             i++;
+        }
+    }
+
+    /**
+     * @return An index into the previous level of specificity from this index. Could
+     * also be described as returning the index representing the parent element of this
+     * index
+     */
+    public FormIndex getPreviousLevel() {
+        if (isTerminal()) {
+            return null;
+        } else {
+            return new FormIndex(nextLevel.getPreviousLevel(), this);
         }
     }
 }

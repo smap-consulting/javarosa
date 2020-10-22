@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'checkstyle'
     id 'jacoco'
-    id "me.champeau.gradle.jmh" version "0.4.8"
+    id "me.champeau.gradle.jmh" version "0.5.0"
 }
 
 repositories {
@@ -52,11 +52,11 @@ checkstyle {
 }
 
 jar {
-    baseName = 'opendatakit-javarosa'
+    baseName = 'javarosa'
     // Be sure to update version in pom.xml to match
     // snapshot release = x.x.x-SNAPSHOT
     // production release = x.x.x
-    version = '2.17.1'
+    version = '3.0.2'
     archiveName = baseName + '-' + version + '.jar'
 
     manifest {
@@ -75,8 +75,12 @@ javadoc {
     failOnError = false
 }
 
+jmhJar.doFirst {
+    new File("build/resources/test").mkdirs()
+}
+
 jmh {
-    exclude = "(BenchmarkTemplate)"
+    exclude = ["(BenchmarkTemplate)"]
     threads = 1
     fork = 1
     timeout = '10s'
@@ -91,4 +95,21 @@ jmh {
     includeTests = true
     resultFormat = 'CSV'
     forceGC = true
+
+    duplicateClassesStrategy = 'warn'
 }
+
+/**
+ * Returns the value of a property of this build if it exists. Otherwise,
+ * returns the provided devault value.
+ *
+ * This method is used as a safe way to get properties that might or might not
+ * be defined in the gradle.properties file.
+ */
+String getValue(String key, String defaultValue) {
+    if (this.hasProperty(key))
+        return this.getProperty(key)
+    return defaultValue
+}
+
+apply from: 'android-api-level-checker.gradle'

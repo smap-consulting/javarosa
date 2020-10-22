@@ -81,7 +81,7 @@ public class XPathConditional implements IConditionExpr {
     }
 
     public boolean eval (DataInstance model, EvaluationContext evalContext) {
-        return XPathFuncExpr.toBoolean(evalRaw(model, evalContext)).booleanValue();
+        return XPathFuncExpr.toBoolean(evalRaw(model, evalContext));
     }
 
     public String evalReadable (DataInstance model, EvaluationContext evalContext) {
@@ -97,47 +97,47 @@ public class XPathConditional implements IConditionExpr {
     }
 
     public Set<TreeReference> getTriggers (TreeReference contextRef) {
-        Set<TreeReference> triggers = new HashSet<TreeReference>();
-        getTriggers(expr, triggers, contextRef, contextRef);
+        Set<TreeReference> triggers = new HashSet<>();
+        getTriggers(expr, contextRef, contextRef, triggers);
         return triggers;
     }
 
-    private static void getTriggers(XPathExpression x, Set<TreeReference> v, TreeReference contextRef, TreeReference originalContext) {
+    private static void getTriggers(XPathExpression x, TreeReference contextRef, TreeReference originalContext, Set<TreeReference> triggersSoFar) {
         if (x instanceof XPathPathExpr) {
             TreeReference ref = ((XPathPathExpr)x).getReference();
             TreeReference contextualized = ref;
-
             if (contextRef != null
-                || (ref.getContext() == TreeReference.CONTEXT_ORIGINAL && originalContext != null)) {
-                contextualized = ref.contextualize(ref.getContext() == TreeReference.CONTEXT_ORIGINAL ? originalContext : contextRef);
+                || (ref.getContextType() == TreeReference.CONTEXT_ORIGINAL && originalContext != null)) {
+                contextualized = ref.contextualize(ref.getContextType() == TreeReference.CONTEXT_ORIGINAL ? originalContext : contextRef);
             }
 
-            //TODO: It's possible we should just handle this the same way as "genericize". Not entirely clear.
-            v.add(contextualized.removePredicates());
+            // TODO: It's possible we should just handle this the same way as "genericize". Not entirely clear.
+            triggersSoFar.add(contextualized.removePredicates());
 
-            for(int i = 0; i < contextualized.size() ; i++) {
+            for (int i = 0; i < contextualized.size() ; i++) {
                 List<XPathExpression> predicates = contextualized.getPredicate(i);
-                if(predicates == null) {
+                if (predicates == null) {
                     continue;
                 }
 
-                //we can't generate this properly without an absolute reference
-                if (!contextualized.isAbsolute()) { throw new IllegalArgumentException("can't get triggers for relative references");}
+                if (!contextualized.isAbsolute()) {
+                    throw new IllegalArgumentException("can't get triggers for relative references");
+                }
                 TreeReference predicateContext = contextualized.getSubReference(i).removePredicates();
 
-                for(XPathExpression predicate : predicates) {
-                    getTriggers(predicate, v, predicateContext, originalContext);
+                for (XPathExpression predicate : predicates) {
+                    getTriggers(predicate, predicateContext, originalContext, triggersSoFar);
                 }
             }
         } else if (x instanceof XPathBinaryOpExpr) {
-            getTriggers(((XPathBinaryOpExpr)x).a, v, contextRef, originalContext);
-            getTriggers(((XPathBinaryOpExpr)x).b, v, contextRef, originalContext);
+            getTriggers(((XPathBinaryOpExpr)x).a, contextRef, originalContext, triggersSoFar);
+            getTriggers(((XPathBinaryOpExpr)x).b, contextRef, originalContext, triggersSoFar);
         } else if (x instanceof XPathUnaryOpExpr) {
-            getTriggers(((XPathUnaryOpExpr)x).a, v, contextRef, originalContext);
+            getTriggers(((XPathUnaryOpExpr)x).a, contextRef, originalContext, triggersSoFar);
         } else if (x instanceof XPathFuncExpr) {
             XPathFuncExpr fx = (XPathFuncExpr)x;
             for (int i = 0; i < fx.args.length; i++)
-                getTriggers(fx.args[i], v, contextRef, originalContext);
+                getTriggers(fx.args[i], contextRef, originalContext, triggersSoFar);
         }
     }
 

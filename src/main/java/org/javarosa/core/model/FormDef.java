@@ -31,15 +31,13 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import org.javarosa.core.log.WrappedException;
-import org.javarosa.core.model.IDag.EventNotifierAccessor;
+import org.javarosa.core.model.TriggerableDag.EventNotifierAccessor;
 import org.javarosa.core.model.actions.Action;
 import org.javarosa.core.model.actions.ActionController;
-import org.javarosa.core.model.condition.Condition;
 import org.javarosa.core.model.condition.Constraint;
 import org.javarosa.core.model.condition.EvaluationContext;
 import org.javarosa.core.model.condition.IConditionExpr;
 import org.javarosa.core.model.condition.IFunctionHandler;
-import org.javarosa.core.model.condition.Recalculate;
 import org.javarosa.core.model.condition.Triggerable;
 import org.javarosa.core.model.data.DateData;
 import org.javarosa.core.model.data.DateTimeData;
@@ -66,7 +64,6 @@ import org.javarosa.core.services.storage.IMetaData;
 import org.javarosa.core.services.storage.Persistable;
 import org.javarosa.core.util.externalizable.DeserializationException;
 import org.javarosa.core.util.externalizable.ExtUtil;
-import org.javarosa.core.util.externalizable.ExtWrapList;
 import org.javarosa.core.util.externalizable.ExtWrapListPoly;
 import org.javarosa.core.util.externalizable.ExtWrapMap;
 import org.javarosa.core.util.externalizable.ExtWrapNullable;
@@ -99,31 +96,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
     public static final String STORAGE_KEY = "FORMDEF";
     public static final int TEMPLATING_RECURSION_LIMIT = 10;
 
-    public enum EvalBehavior {
-        Legacy,
-        April_2014,
-        Safe_2014,
-        Fast_2014
-    }
-
-    public static final EvalBehavior recommendedMode = EvalBehavior.Safe_2014;
-
-    /**
-     * used by FormDef() constructor
-     */
-    private static EvalBehavior defaultMode = recommendedMode;
     private static EventNotifier defaultEventNotifier = new EventNotifierSilent();
-
-    /**
-     * Changes the mode used for evaluations
-     */
-    public static final void setEvalBehavior(EvalBehavior mode) {
-        defaultMode = mode;
-    }
-
-    public static void setDefaultEventNotifier(EventNotifier eventNotifier) {
-        defaultEventNotifier = eventNotifier;
-    }
 
     /**
      * Takes a (possibly relative) reference, and makes it absolute based on its parent.
@@ -182,7 +155,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      */
     private List<IConditionExpr> outputFragments;
 
-    private IDag dagImpl;
+    private TriggerableDag dagImpl;
 
     private EvaluationContext exprEvalContext;
 
@@ -216,36 +189,21 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
     private List<String> parseErrors = new ArrayList<>();
 
     public FormDef() {
-        this(defaultMode, defaultEventNotifier);
+        this(defaultEventNotifier);
     }
 
-    public FormDef(EvalBehavior mode, EventNotifier eventNotifier) {
+    public FormDef(EventNotifier eventNotifier) {
         setID(-1);
         setChildren(null);
         final EventNotifierAccessor ia = new EventNotifierAccessor() {
-
             @Override
             public EventNotifier getEventNotifier() {
                 return FormDef.this.getEventNotifier();
             }
         };
 
-        switch (mode) {
-            case Legacy:
-                dagImpl = new LegacyDagImpl(ia);
-                break;
-            case April_2014:
-                dagImpl = new April2014DagImpl(ia);
-                break;
-            case Safe_2014:
-                dagImpl = new Safe2014DagImpl(ia);
-                break;
-            case Fast_2014:
-                dagImpl = new Fast2014DagImpl(ia);
-                break;
-            default:
-                throw new IllegalStateException("Unexpected mode: " + mode);
-        }
+        dagImpl = new TriggerableDag(ia);
+
         // This is kind of a wreck...
         resetEvaluationContext();
         outputFragments = new ArrayList<>();
@@ -399,7 +357,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
             IFormElement temp = elements.get(i);
             if (temp instanceof GroupDef && ((GroupDef) temp).getRepeat()) {
                 TreeReference repRef = FormInstance.unpackReference(temp.getBind());
-                if (repRef.isParentOf(ref, false)) {
+                if (repRef.isAncestorOf(ref, false)) {
                     int repMult = multiplicities.get(i);
                     ref.setMultiplicity(repRef.size() - 1, repMult);
                 } else {
@@ -441,9 +399,6 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         boolean valueChanged = !objectEquals(answerDataSerializer.serializeAnswerData(oldValue),
             answerDataSerializer.serializeAnswerData(data));
 
-        if (midSurvey && dagImpl.shouldTrustPreviouslyCommittedAnswer() && !valueChanged) {
-            return;
-        }
         setAnswer(data, node);
 
         QuestionDef currentQuestion = findQuestionByRef(ref, this);
@@ -452,7 +407,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
                 ref.getParentRef(), null);
         }
 
-        Collection<QuickTriggerable> qts = triggerTriggerables(ref, midSurvey);
+        Collection<QuickTriggerable> qts = triggerTriggerables(ref);
         dagImpl.publishSummary("New value", ref, qts);
         // TODO: pre-populate fix-count repeats here?
     }
@@ -550,7 +505,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
             }
         }
 
-        dagImpl.deleteRepeatGroup(getMainInstance(), getEvaluationContext(), deleteRef, parentElement, deleteElement);
+        dagImpl.deleteRepeatInstance(getMainInstance(), getEvaluationContext(), deleteRef, deleteElement);
 
         return newIndex;
     }
@@ -571,12 +526,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         // Trigger actions nested in the new repeat
         getChild(index).getActionController().triggerActionsFromEvent(Action.EVENT_ODK_NEW_REPEAT, this, repeatContextRef, this);
 
-        // trigger conditions that depend on the creation of this new node
-        triggerTriggerables(repeatContextRef, true);
-
-        TreeReference parentRef = repeatContextRef.getParentRef();
-        TreeElement parentElement = mainInstance.resolveReference(parentRef);
-        dagImpl.createRepeatGroup(getMainInstance(), getEvaluationContext(), repeatContextRef, parentElement, newNode);
+        dagImpl.createRepeatInstance(getMainInstance(), getEvaluationContext(), repeatContextRef, newNode);
     }
 
     @Override
@@ -589,19 +539,20 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
     public boolean isRepeatRelevant(TreeReference repeatRef) {
         boolean relev = true;
 
-        QuickTriggerable qc = dagImpl.getTriggerableForRepeatGroup(repeatRef.genericize());
+        QuickTriggerable qc = dagImpl.getRelevanceForRepeat(repeatRef.genericize());
         if (qc != null) {
-            Condition c = (Condition) qc.t;
-            relev = c.evalBool(mainInstance, new EvaluationContext(exprEvalContext, repeatRef));
+            relev = (boolean) qc.eval(mainInstance, new EvaluationContext(exprEvalContext, repeatRef));
         }
 
-        // check the relevancy of the immediate parent
         if (relev) {
+            // Must check the template in case of static relevance expressions that wouldn't be in the DAG (e.g. false()).
             TreeElement templNode = mainInstance.getTemplate(repeatRef);
+            // Check the relevancy of the immediate parent. Unclear whether this is needed because in a normal form-filling
+            // flow the child would not be accessible if its parent is irrelevant.
             TreeReference parentPath = templNode.getParent().getRef().genericize();
             TreeElement parentNode = mainInstance
                 .resolveReference(parentPath.contextualize(repeatRef));
-            relev = parentNode.isRelevant();
+            relev = parentNode.isRelevant() && templNode.isRelevant();
         }
 
         return relev;
@@ -647,8 +598,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         return true;
     }
 
-    public void copyItemsetAnswer(QuestionDef q, TreeElement targetNode, IAnswerData data,
-                                  boolean midSurvey) throws InvalidReferenceException {
+    public void copyItemsetAnswer(QuestionDef q, TreeElement targetNode, IAnswerData data) throws InvalidReferenceException {
         ItemsetBinding itemset = q.getDynamicChoices();
         TreeReference targetRef = targetNode.getRef();
         TreeReference destRef = itemset.getDestRef().contextualize(targetRef);
@@ -709,7 +659,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
                 getMainInstance().copyItemsetNode(ch.copyNode, destRef, this);
             }
         }
-        dagImpl.copyItemsetAnswer(getMainInstance(), getEvaluationContext(), destRef, targetNode, midSurvey);
+        dagImpl.copyItemsetAnswer(getMainInstance(), getEvaluationContext(), destRef, targetNode);
     }
 
     /**
@@ -749,9 +699,9 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      * Walks the current set of conditions, and evaluates each of them with the
      * current context.
      */
-    private Collection<QuickTriggerable> initializeTriggerables(TreeReference rootRef, boolean midSurvey) {
+    private Collection<QuickTriggerable> initializeTriggerables(TreeReference rootRef) {
 
-        return dagImpl.initializeTriggerables(getMainInstance(), getEvaluationContext(), rootRef, midSurvey);
+        return dagImpl.initializeTriggerables(getMainInstance(), getEvaluationContext(), rootRef);
     }
 
     /**
@@ -760,8 +710,8 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      * @param ref The full contextualized unambiguous reference of the value that
      *            was changed.
      */
-    public Collection<QuickTriggerable> triggerTriggerables(TreeReference ref, boolean midSurvey) {
-        return dagImpl.triggerTriggerables(getMainInstance(), getEvaluationContext(), ref, midSurvey);
+    public Collection<QuickTriggerable> triggerTriggerables(TreeReference ref) {
+        return dagImpl.triggerTriggerables(getMainInstance(), getEvaluationContext(), ref);
     }
 
     public ValidateOutcome validate(boolean markCompleted) {
@@ -1259,16 +1209,15 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         setFormXmlPath(ExtUtil.nullIfEmpty(ExtUtil.readString(dis)));
         setInstance((FormInstance) ExtUtil.read(dis, FormInstance.class, pf));
 
+        // FormInstanceParser.parseInstance is responsible for initial creation of instances. It explicitly sets the
+        // instance name to null so we force this again on deserialization because some code paths rely on the main
+        // instance not having a name. Evaluation context must be reset after this.
+        mainInstance.getBase().setInstanceName(null);
+
         setLocalizer((Localizer) ExtUtil.read(dis, new ExtWrapNullable(Localizer.class), pf));
 
-        List<Condition> vcond = (List<Condition>) ExtUtil.read(dis, new ExtWrapList(Condition.class), pf);
-        for (Condition condition : vcond) {
+        for (Triggerable condition : TriggerableDag.readExternalTriggerables(dis, pf))
             addTriggerable(condition);
-        }
-        List<Recalculate> vcalc = (List<Recalculate>) ExtUtil.read(dis, new ExtWrapList(Recalculate.class), pf);
-        for (Recalculate recalculate : vcalc) {
-            addTriggerable(recalculate);
-        }
         finalizeTriggerables();
 
         outputFragments = (List<IConditionExpr>) ExtUtil.read(dis, new ExtWrapListPoly(), pf);
@@ -1306,7 +1255,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
     /**
      * Given one or more {@link TreeReference}, return a set of questions and/or groups corresponding to the references
      * that are found in this form definition.
-     *
+     * <p>
      * Note: this performs a recursive breadth-first search so is not intended to be used where performance matters.
      */
     private Set<IFormElement> getElementsFromReferences(Collection<TreeReference> references) {
@@ -1370,8 +1319,8 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         }
 
         mainInstance.isInitialize = true;    // smap note for use in functions that this is an initialisation
-        Collection<QuickTriggerable> qts = initializeTriggerables(TreeReference.rootRef(), false);
-        dagImpl.publishSummary("Form initialized", qts);
+        Collection<QuickTriggerable> qts = initializeTriggerables(TreeReference.rootRef());
+        dagImpl.publishSummary("Form initialized", null, qts);
         mainInstance.isInitialize = false;   // smap
     }
 
@@ -1391,11 +1340,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         ExtUtil.write(dos, getMainInstance());
         ExtUtil.write(dos, new ExtWrapNullable(localizer));
 
-        List<Condition> conditions = dagImpl.getConditions();
-        List<Recalculate> recalcs = dagImpl.getRecalculates();
-
-        ExtUtil.write(dos, new ExtWrapList(conditions));
-        ExtUtil.write(dos, new ExtWrapList(recalcs));
+        dagImpl.writeExternalTriggerables(dos);
 
         ExtUtil.write(dos, new ExtWrapListPoly(outputFragments));
         ExtUtil.write(dos, new ExtWrapMap(submissionProfiles));
@@ -1810,7 +1755,9 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         X newEx;
         try {
             newEx = extension.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException e) {
+            throw new RuntimeException("Illegally Structured XForm Extension " + extension.getName());
+        } catch (IllegalAccessException e) {
             throw new RuntimeException("Illegally Structured XForm Extension " + extension.getName());
         }
         extensions.add(newEx);
@@ -1851,24 +1798,6 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
      */
     public void registerElementWithActionTriggeredByToplevelEvent(IFormElement element) {
         elementsWithActionTriggeredByToplevelEvent.add(element);
-    }
-
-    /**
-     * Pull this in from FormOverview so that we can make fields private.
-     *
-     * @param instanceNode
-     * @param action
-     * @return
-     */
-    public IConditionExpr getConditionExpressionForTrueAction(TreeElement instanceNode, int action) {
-        return dagImpl.getConditionExpressionForTrueAction(getMainInstance(), instanceNode, action);
-    }
-
-    /**
-     * For debugging
-     */
-    public final void printTriggerables(String path) {
-        dagImpl.printTriggerables(path);
     }
 
     public List<String> getParseWarnings() {

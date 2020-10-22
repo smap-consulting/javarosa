@@ -24,6 +24,7 @@ import static java.lang.Double.POSITIVE_INFINITY;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.javarosa.test.utils.SystemHelper.withLocaleAndTimeZone;
 import static org.javarosa.xpath.test.IFunctionHandlerHelpers.HANDLER_ADD;
 import static org.javarosa.xpath.test.IFunctionHandlerHelpers.HANDLER_CHECK_TYPES;
 import static org.javarosa.xpath.test.IFunctionHandlerHelpers.HANDLER_CONCAT;
@@ -56,12 +57,12 @@ import org.javarosa.core.model.instance.TreeReference;
 import org.javarosa.core.model.utils.DateUtils;
 import org.javarosa.xpath.XPathNodeset;
 import org.javarosa.xpath.XPathParseTool;
+import org.javarosa.xpath.XPathException;
 import org.javarosa.xpath.XPathTypeMismatchException;
 import org.javarosa.xpath.XPathUnhandledException;
 import org.javarosa.xpath.XPathUnsupportedException;
 import org.javarosa.xpath.expr.XPathExpression;
 import org.javarosa.xpath.parser.XPathSyntaxException;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,11 +70,10 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class XPathEvalTest {
+    public static final TimeZone GMT = TimeZone.getTimeZone("GMT");
     @Parameterized.Parameter(value = 0)
     public Locale locale;
 
-    private Locale backupLocale;
-    private TimeZone backupTimeZone;
     private EvaluationContext ec;
 
     @Parameterized.Parameters(name = "Locale {0}")
@@ -86,19 +86,7 @@ public class XPathEvalTest {
 
     @Before
     public void setUp() {
-        backupLocale = Locale.getDefault();
-        Locale.setDefault(locale);
-        backupTimeZone = TimeZone.getDefault();
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         ec = new EvaluationContext(null);
-    }
-
-    @After
-    public void tearDown() {
-        Locale.setDefault(backupLocale);
-        backupLocale = null;
-        TimeZone.setDefault(backupTimeZone);
-        backupTimeZone = null;
     }
 
     @Test
@@ -285,7 +273,19 @@ public class XPathEvalTest {
         testEval("normalize-space('\na\nb\n')", "a b");
         testEval("normalize-space('\nab')", "ab");
         testEval("normalize-space(' \ta\n\t  b \n\t c   \n')", "a b c");
+        testEval("normalize-space()", new XPathException());
         testEval("string-length('cocotero')", 8.0);
+        testEval("string-length()", new XPathException());
+    }
+
+    @Test
+    public void other_string_functions_with_context() {
+        FormInstance instance1 = buildInstance();
+        testEval("/data/path[normalize-space()='some value']", instance1, null,
+            createExpectedNodesetFromInstance(instance1, "path", 2));
+
+        testEval("/data/path[string-length()=17]", instance1, null,
+            createExpectedNodesetFromInstance(instance1, "path", 2));
     }
 
     @Test
@@ -299,27 +299,29 @@ public class XPathEvalTest {
         dates cannot reliably be compared/used across time zones (an issue with the code)
         any time-of-day or DST should be ignored when comparing/using a date (an issue with testing)
         */
-        ec.addFunctionHandler(HANDLER_CONVERTIBLE);
-        testEval("date('2000-01-01')", DateUtils.getDate(2000, 1, 1));
-        testEval("date('1945-04-26')", DateUtils.getDate(1945, 4, 26));
-        testEval("date('1996-02-29')", DateUtils.getDate(1996, 2, 29));
-        testEval("date('1983-09-31')", new XPathTypeMismatchException());
-        testEval("date('not a date')", new XPathTypeMismatchException());
-        testEval("date(0)", DateUtils.getDate(1970, 1, 1));
-        testEval("date(6.5)", DateUtils.getDate(1970, 1, 7));
-        testEval("date(1)", DateUtils.getDate(1970, 1, 2));
-        testEval("date(-1)", DateUtils.getDate(1969, 12, 31));
-        testEval("date(14127)", DateUtils.getDate(2008, 9, 5));
-        testEval("date(-10252)", DateUtils.getDate(1941, 12, 7));
-        testEval("date(date('1989-11-09'))", DateUtils.getDate(1989, 11, 9));
-        testEval("date(true())", new XPathTypeMismatchException());
-        testEval("date(convertible())", null, ec, new XPathTypeMismatchException());
-        testEval("format-date('2018-01-02T10:20:30.123', \"%Y-%m-%e %H:%M:%S\")", "2018-01-2 10:20:30");
-        testEval("date-time('2000-01-01T10:20:30.000')", DateUtils.getDateTimeFromString("2000-01-01T10:20:30.000"));
-        testEval("decimal-date-time('2000-01-01T10:20:30.000')", 10957.430902777778);
-        testEval("decimal-time('2000-01-01T10:20:30.000+03:00')", .30590277777810115);
-        testEval("decimal-date-time('-1000')", new XPathTypeMismatchException());
-        testEval("decimal-date-time('-01-2019')", new XPathTypeMismatchException());
+        withLocaleAndTimeZone(locale, GMT, () -> {
+            ec.addFunctionHandler(HANDLER_CONVERTIBLE);
+            testEval("date('2000-01-01')", DateUtils.getDate(2000, 1, 1));
+            testEval("date('1945-04-26')", DateUtils.getDate(1945, 4, 26));
+            testEval("date('1996-02-29')", DateUtils.getDate(1996, 2, 29));
+            testEval("date('1983-09-31')", new XPathTypeMismatchException());
+            testEval("date('not a date')", new XPathTypeMismatchException());
+            testEval("date(0)", DateUtils.getDate(1970, 1, 1));
+            testEval("date(6.5)", DateUtils.getDate(1970, 1, 7));
+            testEval("date(1)", DateUtils.getDate(1970, 1, 2));
+            testEval("date(-1)", DateUtils.getDate(1969, 12, 31));
+            testEval("date(14127)", DateUtils.getDate(2008, 9, 5));
+            testEval("date(-10252)", DateUtils.getDate(1941, 12, 7));
+            testEval("date(date('1989-11-09'))", DateUtils.getDate(1989, 11, 9));
+            testEval("date(true())", new XPathTypeMismatchException());
+            testEval("date(convertible())", null, ec, new XPathTypeMismatchException());
+            testEval("format-date('2018-01-02T10:20:30.123', \"%Y-%m-%e %H:%M:%S\")", "2018-01-2 10:20:30");
+            testEval("date-time('2000-01-01T10:20:30.000')", DateUtils.getDateTimeFromString("2000-01-01T10:20:30.000"));
+            testEval("decimal-date-time('2000-01-01T10:20:30.000')", 10957.430902777778);
+            testEval("decimal-time('2000-01-01T10:20:30.000+03:00')", .30590277777810115);
+            testEval("decimal-date-time('-1000')", new XPathTypeMismatchException());
+            testEval("decimal-date-time('-01-2019')", new XPathTypeMismatchException());
+        });
     }
 
     @Test
@@ -423,7 +425,7 @@ public class XPathEvalTest {
         // non US format
         testEval("round('14,6')", 15.0);
         // Java 8 tests deprecated by XPath 3.0 specification
-        // See discussion at https://github.com/opendatakit/javarosa/pull/42#issuecomment-299527754
+        // See discussion at https://github.com/getodk/javarosa/pull/42#issuecomment-299527754
         testEval("round('12345.15', 1)", 12345.2);
         testEval("round('-12345.15', 1)", -12345.1);
         testEval("pow(2, 2)", 4.0);
@@ -710,6 +712,15 @@ public class XPathEvalTest {
         }
     }
 
+    private XPathNodeset createExpectedNodesetFromInstance(FormInstance testInstance, String nodeName, int index) {
+        TreeReference referencedNode = testInstance.getRoot().getChildrenWithName(nodeName).get(index).getRef();
+        return new XPathNodeset(
+            Collections.singletonList(referencedNode),
+            testInstance,
+            new EvaluationContext(new EvaluationContext(testInstance), referencedNode)
+        );
+    }
+
     private XPathNodeset createExpectedNodesetFromIndexedRepeatFunction(FormInstance testInstance, int repeatIndex, String nodeName) {
         TreeReference referencedNode = testInstance.getRoot().getChildAt(repeatIndex).getChildrenWithName(nodeName).get(0).getRef();
         return new XPathNodeset(
@@ -757,7 +768,7 @@ public class XPathEvalTest {
         data.addChild(new TreeElement("path", 1));
 
         path = new TreeElement("path", 2);
-        path.setValue(new StringData("some value"));
+        path.setValue(new StringData("    some    value"));
         data.addChild(path);
 
         path = new TreeElement("path", 3);
