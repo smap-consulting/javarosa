@@ -15,3 +15,9 @@ To build the project, go to the `View` menu, then `Tool Windows > Gradle`. `buil
 To package a jar, use the `jar` Gradle task.
 
 The generated Jar file will be in ./build/libs
+
+Acknowledgements
+----------------
+
+This project:
+* forks the [ODK JavaRosa library](https://github.com/getodk/javarosa)
