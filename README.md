@@ -1,6 +1,6 @@
 # Smap JavaRosa
 
-This is a fork of the [ODK JavaRosa library](https://github.com/getodk/javarosa) u 
+This is a fork of the [ODK JavaRosa library](https://github.com/getodk/javarosa)
 
 ## Setting up your development environment
 
