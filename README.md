@@ -10,7 +10,7 @@ This fork of Javarosa has changes to support [Field Task](https://github.com/sma
 
 ## Setting up your development environment
 
-1. Download and install [Git](https://git-scm.com/downloads) and add it to your PATH
+1. Install [Git](https://git-scm.com/downloads) if you don't have it
 
 1. Download and install [Android Studio](https://developer.android.com/studio/index.html) 
 
