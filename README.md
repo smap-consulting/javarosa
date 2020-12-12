@@ -4,6 +4,7 @@ This fork of Javarosa has changes to support [Field Task](https://github.com/sma
 
 ## Table of Contents
 * [Setting up your development environment](#setting-up-your-development-environment)
+* [Branches](#branches)
 * [Building the project](#building-the-project)
 * [Changes in this JavaRosa fork](#changes-in-this-javarosa-fork)
 * [Acknowledgements](#acknowledgements)
@@ -20,6 +21,14 @@ This fork of Javarosa has changes to support [Field Task](https://github.com/sma
 
 1. Import the cloned proect into Android Studio
 
+1. Checkout the production branch
+
+          git checkout production
+
+## Branches
+* production - The latest production ready code
+* master - The latest unmodifield code from the upstream repository
+
 ## Building the project
  
 To build the project, go to the `View` menu, then `Tool Windows > Gradle`. 
@@ -32,7 +41,7 @@ The generated Jar file will be in ./build/libs
 
 ## Changes in this JavaRosa fork
 
-*  Add a default() function that prevents a manually modified default value from being reset on save of the survey
+*  Added a default() function that prevents a manually modified default value from being reset on save of the survey
 
 ## Acknowledgements
 
