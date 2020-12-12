@@ -18,9 +18,13 @@ This fork of Javarosa has changes to support [Field Task](https://github.com/sma
 
 1. Clone your fork of the project onto your development workstation using git
 
+1. Import the cloned proect into Android Studio
+
 ## Building the project
  
-To build the project, go to the `View` menu, then `Tool Windows > Gradle`. `build` will be in `javarosa > Tasks > build > build`. Double-click `build` to package the application. This Gradle task will now be the default action in your `Run` menu. 
+To build the project, go to the `View` menu, then `Tool Windows > Gradle`. 
+
+Find `build` in the Gradle window will in `javarosa > Tasks > build > build` and ouble-click on it to package the application. This Gradle task will now be the default action in your `Run` menu.  Note some unit tests may fail if you are developing on a windows computer.  Add @Ignore to these.
 
 To package a jar, use the `jar` Gradle task.
 
