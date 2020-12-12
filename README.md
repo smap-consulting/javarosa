@@ -28,7 +28,7 @@ The generated Jar file will be in ./build/libs
 
 ## Changes in this JavaRosa fork
 
-*  Teh default() function that prevents a manually modified default value from being reset on save of the survey
+*  Add a default() function that prevents a manually modified default value from being reset on save of the survey
 
 ## Acknowledgements
 
