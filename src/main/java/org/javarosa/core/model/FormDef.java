@@ -719,8 +719,10 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         FormEntryModel formEntryModelToBeValidated = new FormEntryModel(this);
         FormEntryController formEntryControllerToBeValidated = new FormEntryController(formEntryModelToBeValidated);
         mainInstance.isValidate = true;    // smap - default function needs to know if this is final
+        exprEvalContext.isValidate = true;  // smap after 3.03 evalu context seems to be here
         ValidateOutcome vo = dagImpl.validate(formEntryControllerToBeValidated, markCompleted); // smap
         mainInstance.isValidate = false;   // smap
+        exprEvalContext.isValidate = false; // smap
         return vo;
     }
 
