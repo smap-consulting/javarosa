@@ -66,7 +66,8 @@ public interface XFormsElement {
         return t("h:html " +
                         "xmlns=\"http://www.w3.org/2002/xforms\" " +
                         "xmlns:h=\"http://www.w3.org/1999/xhtml\" " +
-                        "xmlns:jr=\"http://openrosa.org/javarosa\"",
+                        "xmlns:jr=\"http://openrosa.org/javarosa\" " +
+                        "xmlns:odk=\"http://www.opendatakit.org/xforms\"",
                 children
         );
     }
@@ -129,6 +130,10 @@ public interface XFormsElement {
 
     static XFormsElement setvalue(String event, String ref, String value) {
         return t("setvalue event=\"" + event + "\" ref=\"" + ref + "\" value=\"" + value + "\"");
+    }
+
+    static XFormsElement setvalue(String event, String ref) {
+        return t("setvalue event=\"" + event + "\" ref=\"" + ref + "\"");
     }
 
     static XFormsElement setvalueLiteral(String event, String ref, String innerHtml) {

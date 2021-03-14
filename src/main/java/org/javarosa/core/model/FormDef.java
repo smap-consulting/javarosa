@@ -32,8 +32,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import org.javarosa.core.log.WrappedException;
 import org.javarosa.core.model.TriggerableDag.EventNotifierAccessor;
-import org.javarosa.core.model.actions.Action;
 import org.javarosa.core.model.actions.ActionController;
+import org.javarosa.core.model.actions.Actions;
 import org.javarosa.core.model.condition.Constraint;
 import org.javarosa.core.model.condition.EvaluationContext;
 import org.javarosa.core.model.condition.IConditionExpr;
@@ -403,7 +403,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
 
         QuestionDef currentQuestion = findQuestionByRef(ref, this);
         if (valueChanged && currentQuestion != null) {
-            currentQuestion.getActionController().triggerActionsFromEvent(Action.EVENT_QUESTION_VALUE_CHANGED, this,
+            currentQuestion.getActionController().triggerActionsFromEvent(Actions.EVENT_QUESTION_VALUE_CHANGED, this,
                 ref.getParentRef(), null);
         }
 
@@ -521,17 +521,17 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
 
         // Fire events before form re-computation (calculates, relevance, etc). First trigger actions defined in the
         // model and then trigger actions defined in the body
-        actionController.triggerActionsFromEvent(Action.EVENT_JR_INSERT, this, repeatContextRef, this);
-        actionController.triggerActionsFromEvent(Action.EVENT_ODK_NEW_REPEAT, this, repeatContextRef, this);
+        actionController.triggerActionsFromEvent(Actions.EVENT_JR_INSERT, this, repeatContextRef, this);
+        actionController.triggerActionsFromEvent(Actions.EVENT_ODK_NEW_REPEAT, this, repeatContextRef, this);
         // Trigger actions nested in the new repeat
-        getChild(index).getActionController().triggerActionsFromEvent(Action.EVENT_ODK_NEW_REPEAT, this, repeatContextRef, this);
+        getChild(index).getActionController().triggerActionsFromEvent(Actions.EVENT_ODK_NEW_REPEAT, this, repeatContextRef, this);
 
         dagImpl.createRepeatInstance(getMainInstance(), getEvaluationContext(), repeatContextRef, newNode);
     }
 
     @Override
     public void processResultOfAction(TreeReference refSetByAction, String event) {
-        if (Action.EVENT_JR_INSERT.equals(event)) {
+        if (Actions.EVENT_JR_INSERT.equals(event)) {
             // CommCare has an implementation if needed
         }
     }
@@ -1143,7 +1143,7 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
     }
 
     public boolean postProcessInstance() {
-        actionController.triggerActionsFromEvent(Action.EVENT_XFORMS_REVALIDATE, this);
+        actionController.triggerActionsFromEvent(Actions.EVENT_XFORMS_REVALIDATE, elementsWithActionTriggeredByToplevelEvent, this);
         return postProcessInstance(mainInstance.getRoot());
     }
 
@@ -1310,17 +1310,16 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         }
 
         if (newInstance) {
-            actionController.triggerActionsFromEvent(Action.EVENT_ODK_INSTANCE_FIRST_LOAD, this);
-            for (IFormElement element : elementsWithActionTriggeredByToplevelEvent) {
-                element.getActionController().triggerActionsFromEvent(Action.EVENT_ODK_INSTANCE_FIRST_LOAD, this, ((TreeReference) element.getBind().getReference()).getParentRef(), null);
-            }
+            actionController.triggerActionsFromEvent(Actions.EVENT_ODK_INSTANCE_FIRST_LOAD, elementsWithActionTriggeredByToplevelEvent, this);
 
             // xforms-ready is marked as deprecated as of JavaRosa 2.14.0 but is still dispatched for compatibility with
             // old form definitions
-            actionController.triggerActionsFromEvent(Action.EVENT_XFORMS_READY, this);
+            actionController.triggerActionsFromEvent(Actions.EVENT_XFORMS_READY, elementsWithActionTriggeredByToplevelEvent, this);
         }
 
         mainInstance.isInitialize = true;    // smap note for use in functions that this is an initialisation
+        actionController.triggerActionsFromEvent(Actions.EVENT_ODK_INSTANCE_LOAD, elementsWithActionTriggeredByToplevelEvent, this);
+
         Collection<QuickTriggerable> qts = initializeTriggerables(TreeReference.rootRef());
         dagImpl.publishSummary("Form initialized", null, qts);
         mainInstance.isInitialize = false;   // smap
