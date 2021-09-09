@@ -19,7 +19,7 @@ This fork of Javarosa has changes to support [Field Task](https://github.com/sma
 
 1. Clone your fork of the project onto your development workstation using git
 
-1. Import the cloned proect into Android Studio
+1. Import the cloned project into Android Studio
 
 1. Checkout the production branch
 
