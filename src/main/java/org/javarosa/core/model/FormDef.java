@@ -529,6 +529,18 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         dagImpl.createRepeatInstance(getMainInstance(), getEvaluationContext(), repeatContextRef, newNode);
     }
 
+    /*
+     * Smap
+     * This is called when moving forward into a new repeat index in order
+     * to ensure that aysynchronous lookups are applied applied
+     * Possibly it should be modified to check that the repeat has a lookup and if it
+     * does not return without reinitialising
+     */
+    public void reinitialiseRepeat(FormIndex index) {
+        TreeReference repeatContextRef = getChildInstanceRef(index);
+        triggerTriggerables(repeatContextRef);
+    }
+
     @Override
     public void processResultOfAction(TreeReference refSetByAction, String event) {
         if (Actions.EVENT_JR_INSERT.equals(event)) {
