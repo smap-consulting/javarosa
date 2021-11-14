@@ -6,6 +6,10 @@
 build
 gradle.properties
 
+# eclipse (added to eclipse for debugging)
+.classpath
+.settings
+
 # intellij
 .idea
 *.iml
