@@ -443,7 +443,7 @@ public class FormEntryModel {
                                     throw new RuntimeException("Invalid Reference while creating new repeat!" + ire.getMessage());
                                 }
                             }
-                        } else { // smap beta
+                        } else { // smap creating repeating groups from csv data
                             getForm().reinitialiseRepeat(index);
                         }
                     }
