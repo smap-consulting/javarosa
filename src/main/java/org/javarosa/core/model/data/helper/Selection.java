@@ -96,7 +96,8 @@ public class Selection implements Externalizable {
     }
 
     public void attachChoice (QuestionDef q) {
-        if (q.getDynamicChoices() != null) //can't attach dynamic choices because they aren't guaranteed to exist yet
+        // smap add check for choices from csv file
+        if (q.getDynamicChoices() != null || q.csvChoices()) //can't attach dynamic choices because they aren't guaranteed to exist yet
             return;
 
         SelectChoice choice = null;

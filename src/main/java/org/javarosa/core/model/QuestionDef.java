@@ -222,6 +222,15 @@ public class QuestionDef implements IFormElement, Localizable {
         return dynamicChoices;
     }
 
+    // smap method to identify questions that get their choices from a csv file
+    public boolean csvChoices() {
+        boolean csv = false;
+        if(appearanceAttr != null && appearanceAttr.contains("search(")) {
+            csv = true;
+        }
+        return csv;
+    }
+
     public void setDynamicChoices (ItemsetBinding ib) {
         // the call to dynamicChoices.setDestRef(this)
         //

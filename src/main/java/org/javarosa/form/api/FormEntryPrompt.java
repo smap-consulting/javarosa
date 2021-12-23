@@ -336,15 +336,20 @@ public class FormEntryPrompt extends FormEntryCaption {
         if(sel.index == -1) { sel.attachChoice(this.getQuestion()); }
 
         //check for the null id case and return labelInnerText if it is so.
-        String tid = sel.choice.getTextID();
-        if(tid == null || tid.length() == 0) return substituteStringArgs(sel.choice.getLabelInnerText());
+        if(sel.choice != null) { // Dynamic chocies may not have been created yet - skip
+            String tid = sel.choice.getTextID();
+            if (tid == null || tid.length() == 0)
+                return substituteStringArgs(sel.choice.getLabelInnerText());
 
-        //otherwise check for 'long' form of the textID, then for the default form and return
-        String returnText;
-        returnText = getIText(tid, "long");
-        if(returnText == null) returnText = getIText(tid,null);
+            //otherwise check for 'long' form of the textID, then for the default form and return
+            String returnText;
+            returnText = getIText(tid, "long");
+            if (returnText == null) returnText = getIText(tid, null);
 
-        return substituteStringArgs(returnText);
+            return substituteStringArgs(returnText);
+        } else {   // smap
+            return "XXXXXX";
+        }
     }
 
     /**
