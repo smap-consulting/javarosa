@@ -348,7 +348,7 @@ public class FormEntryPrompt extends FormEntryCaption {
 
             return substituteStringArgs(returnText);
         } else {   // smap
-            return "XXXXXX";
+            return sel.xmlValue;
         }
     }
 
