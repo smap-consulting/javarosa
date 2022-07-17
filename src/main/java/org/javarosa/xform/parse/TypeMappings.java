@@ -14,6 +14,7 @@ import static org.javarosa.core.model.Constants.DATATYPE_DECIMAL;
 import static org.javarosa.core.model.Constants.DATATYPE_GEOPOINT;
 import static org.javarosa.core.model.Constants.DATATYPE_GEOSHAPE;
 import static org.javarosa.core.model.Constants.DATATYPE_GEOTRACE;
+import static org.javarosa.core.model.Constants.DATATYPE_GEOCOMPOUND;
 import static org.javarosa.core.model.Constants.DATATYPE_INTEGER;
 import static org.javarosa.core.model.Constants.DATATYPE_LONG;
 import static org.javarosa.core.model.Constants.DATATYPE_TEXT;
@@ -59,6 +60,7 @@ class TypeMappings {
         put("geopoint",     DATATYPE_GEOPOINT);
         put("geoshape",     DATATYPE_GEOSHAPE);
         put("geotrace",     DATATYPE_GEOTRACE);
+        put("geocompound",     DATATYPE_GEOCOMPOUND);  // smap
         put("barcode",      DATATYPE_BARCODE);
         put("binary",       DATATYPE_BINARY);
     }};

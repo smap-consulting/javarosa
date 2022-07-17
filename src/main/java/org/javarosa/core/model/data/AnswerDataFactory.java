@@ -59,6 +59,8 @@ public class AnswerDataFactory {
                 return new GeoShapeData();
             case GEOTRACE:
                 return new GeoTraceData();
+            case GEOCOMPOUND:                   // smap
+                return new GeoCompoundData();
             case INTEGER:
                 return new IntegerData();
             case LONG:

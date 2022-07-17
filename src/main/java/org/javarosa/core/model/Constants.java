@@ -66,6 +66,7 @@ public class Constants {
     public static final int DATATYPE_LONG           = 13;
     public static final int DATATYPE_GEOSHAPE       = 14;
     public static final int DATATYPE_GEOTRACE       = 15;
+    public static final int DATATYPE_GEOCOMPOUND       = 16; // smap
 
     public static final int CONTROL_UNTYPED         = -1;
     public static final int CONTROL_INPUT           = 1;

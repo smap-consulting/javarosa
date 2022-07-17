@@ -22,6 +22,7 @@ import static org.javarosa.core.model.DataType.DATE;
 import static org.javarosa.core.model.DataType.GEOPOINT;
 import static org.javarosa.core.model.DataType.GEOSHAPE;
 import static org.javarosa.core.model.DataType.GEOTRACE;
+import static org.javarosa.core.model.DataType.GEOCOMPOUND;
 import static org.javarosa.core.model.DataType.INTEGER;
 import static org.javarosa.core.model.DataType.LONG;
 import static org.javarosa.core.model.DataType.MULTIPLE_ITEMS;
@@ -101,6 +102,8 @@ public interface IAnswerData extends Externalizable {
             return new GeoShapeData().cast(new UncastData(String.valueOf(val)));
         } else if (dataType == GEOTRACE) {
             return new GeoTraceData().cast(new UncastData(String.valueOf(val)));
+        } else if (dataType == GEOCOMPOUND) {       // smap
+            return new GeoCompoundData().cast(new UncastData(String.valueOf(val)));
         } else if (dataType == CHOICE) {
             return new SelectOneData().cast(new UncastData(String.valueOf(val)));
         } else if (dataType == MULTIPLE_ITEMS) {

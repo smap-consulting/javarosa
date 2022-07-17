@@ -39,6 +39,7 @@ public class CoreModelModule implements IModule {
             "org.javarosa.core.model.data.GeoPointData",
             "org.javarosa.core.model.data.GeoShapeData",
             "org.javarosa.core.model.data.GeoTraceData",
+            "org.javarosa.core.model.data.GeoCompoundData",    // smap
             "org.javarosa.core.model.data.IntegerData",
             "org.javarosa.core.model.data.LongData",
             "org.javarosa.core.model.data.MultiPointerAnswerData",

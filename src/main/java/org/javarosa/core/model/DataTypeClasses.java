@@ -23,6 +23,7 @@ import org.javarosa.core.model.data.DecimalData;
 import org.javarosa.core.model.data.GeoPointData;
 import org.javarosa.core.model.data.GeoShapeData;
 import org.javarosa.core.model.data.GeoTraceData;
+import org.javarosa.core.model.data.GeoCompoundData;    // smap
 import org.javarosa.core.model.data.IntegerData;
 import org.javarosa.core.model.data.LongData;
 import org.javarosa.core.model.data.SelectMultiData;
@@ -42,6 +43,7 @@ import static org.javarosa.core.model.DataType.DECIMAL;
 import static org.javarosa.core.model.DataType.GEOPOINT;
 import static org.javarosa.core.model.DataType.GEOSHAPE;
 import static org.javarosa.core.model.DataType.GEOTRACE;
+import static org.javarosa.core.model.DataType.GEOCOMPOUND;
 import static org.javarosa.core.model.DataType.INTEGER;
 import static org.javarosa.core.model.DataType.LONG;
 import static org.javarosa.core.model.DataType.MULTIPLE_ITEMS;
@@ -64,7 +66,8 @@ public class DataTypeClasses {
         {MULTIPLE_ITEMS,    SelectMultiData .class},
         {GEOPOINT,          GeoPointData    .class},
         {GEOSHAPE,          GeoShapeData    .class},
-        {GEOTRACE,          GeoTraceData    .class}
+        {GEOTRACE,          GeoTraceData    .class},
+        {GEOCOMPOUND,       GeoCompoundData    .class}      // smap
     };
 
     public static Class classForType(DataType dataType) {

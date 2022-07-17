@@ -31,6 +31,7 @@ import org.javarosa.core.model.data.DateData;
 import org.javarosa.core.model.data.DateTimeData;
 import org.javarosa.core.model.data.DecimalData;
 import org.javarosa.core.model.data.GeoTraceData;
+import org.javarosa.core.model.data.GeoCompoundData;    // smap
 import org.javarosa.core.model.data.GeoPointData;
 import org.javarosa.core.model.data.GeoShapeData;
 import org.javarosa.core.model.data.IAnswerData;
@@ -266,6 +267,9 @@ public class XPathPathExpr extends XPathExpression {
             // we have no access fns that interact with GeoShape objects (the getValue() data type)...
             return val.getDisplayText();
         } else if (val instanceof GeoTraceData) {
+            // we have no access fns that interact with GeoTrace objects (the getValue() data type)...
+            return val.getDisplayText();
+        } else if (val instanceof GeoCompoundData) {    // smap
             // we have no access fns that interact with GeoTrace objects (the getValue() data type)...
             return val.getDisplayText();
         } else {

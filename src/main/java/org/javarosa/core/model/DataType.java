@@ -36,7 +36,8 @@ public enum DataType {
     BINARY          (12),
     LONG            (13),
     GEOSHAPE        (14),
-    GEOTRACE        (15);
+    GEOTRACE        (15),
+    GEOCOMPOUND     (16);
 
     public final int value;
 

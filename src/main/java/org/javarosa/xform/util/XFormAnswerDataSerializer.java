@@ -27,6 +27,7 @@ import org.javarosa.core.model.data.DateData;
 import org.javarosa.core.model.data.DateTimeData;
 import org.javarosa.core.model.data.DecimalData;
 import org.javarosa.core.model.data.GeoTraceData;
+import org.javarosa.core.model.data.GeoCompoundData;
 import org.javarosa.core.model.data.GeoPointData;
 import org.javarosa.core.model.data.GeoShapeData;
 import org.javarosa.core.model.data.IAnswerData;
@@ -70,7 +71,7 @@ public class XFormAnswerDataSerializer implements IAnswerDataSerializer {
             data instanceof MultipleItemsData || data instanceof SelectOneData ||
             data instanceof IntegerData || data instanceof DecimalData || data instanceof PointerAnswerData    ||
             data instanceof MultiPointerAnswerData ||
-            data instanceof GeoPointData || data instanceof GeoTraceData || data instanceof GeoShapeData ||
+            data instanceof GeoPointData || data instanceof GeoTraceData || data instanceof GeoShapeData || data instanceof GeoCompoundData || // smap
             data instanceof LongData || data instanceof DateTimeData || data instanceof UncastData) {
             return true;
         } else {
@@ -207,6 +208,11 @@ public class XFormAnswerDataSerializer implements IAnswerDataSerializer {
         return data.getDisplayText();
      }
 
+    // smap
+    public Object serializeAnswerData(GeoCompoundData data) {
+        return data.getDisplayText();
+    }
+
     public Object serializeAnswerData(GeoShapeData data) {
         return data.getDisplayText();
      }
@@ -257,6 +263,8 @@ public class XFormAnswerDataSerializer implements IAnswerDataSerializer {
             return serializeAnswerData((GeoShapeData)data);
         } else if (data instanceof GeoTraceData) {
             return serializeAnswerData((GeoTraceData)data);
+        } else if (data instanceof GeoCompoundData) {
+            return serializeAnswerData((GeoCompoundData)data);
         } else if (data instanceof GeoPointData) {
             return serializeAnswerData((GeoPointData)data);
         } else if (data instanceof DateTimeData) {

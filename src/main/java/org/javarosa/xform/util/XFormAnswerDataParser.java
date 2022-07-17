@@ -28,6 +28,7 @@ import org.javarosa.core.model.data.DateData;
 import org.javarosa.core.model.data.DateTimeData;
 import org.javarosa.core.model.data.DecimalData;
 import org.javarosa.core.model.data.GeoTraceData;
+import org.javarosa.core.model.data.GeoCompoundData;    // smap
 import org.javarosa.core.model.data.GeoPointData;
 import org.javarosa.core.model.data.GeoShapeData;
 import org.javarosa.core.model.data.IAnswerData;
@@ -155,6 +156,17 @@ public class XFormAnswerDataParser {
                     return new GeoTraceData().cast(new UncastData(trimmedText));
                 } catch (Exception e) {
                     logGeoCreateError(GeoTraceData.class, trimmedText, e);
+                    return null;
+                }
+
+            case GEOCOMPOUND:       // smap
+                if (trimmedText == null) {
+                    return new GeoCompoundData();
+                }
+                try {
+                    return new GeoCompoundData().cast(new UncastData(trimmedText));
+                } catch (Exception e) {
+                    logGeoCreateError(GeoCompoundData.class, trimmedText, e);
                     return null;
                 }
 
