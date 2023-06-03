@@ -1330,11 +1330,13 @@ public class FormDef implements IFormElement, Localizable, Persistable, IMetaDat
         }
 
         mainInstance.isInitialize = true;    // smap note for use in functions that this is an initialisation
+        exprEvalContext.isInitialize = true;  // smap after 3.03 evalu context seems to be here
         actionController.triggerActionsFromEvent(Actions.EVENT_ODK_INSTANCE_LOAD, elementsWithActionTriggeredByToplevelEvent, this);
 
         Collection<QuickTriggerable> qts = initializeTriggerables(TreeReference.rootRef());
         dagImpl.publishSummary("Form initialized", null, qts);
         mainInstance.isInitialize = false;   // smap
+        exprEvalContext.isInitialize = false;  // smap
     }
 
     /**
