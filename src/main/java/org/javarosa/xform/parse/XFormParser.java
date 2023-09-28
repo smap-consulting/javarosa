@@ -1579,10 +1579,9 @@ public class XFormParser implements IXFormParserFunctions {
             String countRef = e.getAttributeValue(NAMESPACE_JAVAROSA, "count");
             if (countRef != null) {
                 group.count = getAbsRef(new XPathReference(countRef), parent);
-                group.noAddRemove = true;
-            } else {
-                group.noAddRemove = (e.getAttributeValue(NAMESPACE_JAVAROSA, "noAddRemove") != null);
             }
+            // smap always set no add remove expicitely as a repeat with a count can be extended
+            group.noAddRemove = (e.getAttributeValue(NAMESPACE_JAVAROSA, "noAddRemove") != null);
         }
 
         for (int i = 0; i < e.getChildCount(); i++) {

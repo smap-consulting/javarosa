@@ -110,7 +110,8 @@ public interface XFormsElement {
     }
 
     static XFormsElement repeat(String ref, String countRef, XFormsElement... children) {
-        return t("repeat nodeset=\"" + ref + "\" jr:count=\"" + countRef + "\"", children);
+        return t("repeat nodeset=\"" + ref + "\" jr:count=\"" + countRef + "\"" +
+            " jr:noAddRemove=\"true()\"", children);    // smap add noAddRemove
     }
 
     static XFormsElement label(String innerHtml) {

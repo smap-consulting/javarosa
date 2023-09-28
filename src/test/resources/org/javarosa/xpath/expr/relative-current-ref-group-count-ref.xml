@@ -22,7 +22,7 @@
     <h:body>
         <group ref="/data/my_group">
             <label>Some label</label>
-            <repeat nodeset="/data/my_group" jr:count="current()/../count">
+            <repeat nodeset="/data/my_group" jr:count="current()/../count" jr:noAddRemove="true()">
                 <input ref="name">
                     <label>Name</label>
                 </input>

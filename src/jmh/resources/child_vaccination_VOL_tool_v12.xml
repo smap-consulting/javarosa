@@ -331,7 +331,7 @@
             <label>
                 <output value=" /data/home_type3 "/>
             </label>
-            <repeat jr:count=" /data/household_count " nodeset="/data/household">
+            <repeat jr:count=" /data/household_count " nodeset="/data/household" jr:noAddRemove="true()">
                 <input ref="/data/household/flatNumber">
                     <label>House, apartment or dwelling number</label>
                 </input>
@@ -420,7 +420,7 @@
                 </input>
                 <group ref="/data/household/child_repeat">
                     <label>Child</label>
-                    <repeat jr:count=" ../child_repeat_count " nodeset="/data/household/child_repeat">
+                    <repeat jr:count=" ../child_repeat_count " nodeset="/data/household/child_repeat" jr:noAddRemove="true()">
                         <input ref="/data/household/child_repeat/childName">
                             <label>What is the name of your child?</label>
                         </input>
